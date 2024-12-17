@@ -1,4 +1,7 @@
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+import matplotlib.animation as animation
 
 with open('data/day16data', 'r') as file:
     txt = file.read()
@@ -106,6 +109,23 @@ nodes_unsolved = set([start_node])
 nodes_solved = set()
 nodes_involved_in_best_routes=set()
 
+fig = plt.figure()
+frames =[]
+def printa(i, n):
+    result = np.array([[(2 if is_a_block(y) else 0) for y in x] for x in arr])
+
+    for b in nodes_solved:
+        result[b.p[0], b.p[1]] = 4
+
+    for b in nodes_unsolved:
+        result[b.p[0], b.p[1]] = 10
+
+    #for b in node_best_routes[n]:
+       # result[b.p[0], b.p[1]] = 20
+
+    frames.append([plt.imshow(result,animated=True)])
+
+
 while not len(nodes_unsolved)==0:
 
     sorted_nodes = sorted(nodes_unsolved, key=lambda x: node_best_scores[x])
@@ -128,8 +148,16 @@ while not len(nodes_unsolved)==0:
                 node_best_routes[edge.node2].append(edge.node1)
     nodes_unsolved.remove(best_node_unsolved)
     nodes_solved.add(best_node_unsolved)
+    if len(nodes_solved)%10000 ==0:
+        printa(len(nodes_solved), best_node_unsolved)
 
 print(len(nodes_involved_in_best_routes))
+
+
+ani = animation.ArtistAnimation(fig, frames, interval=2, blit=True,
+                                repeat_delay=100)
+
+ani.save('c:/temp/images/maze_movie.mp4')
 
 locations = [(n.p[0],n.p[1]) for n in nodes_involved_in_best_routes]
 locations = set(locations)
