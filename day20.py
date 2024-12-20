@@ -24,9 +24,10 @@ class Edge:
         self.node2=node2
 
 class Cheat:
-    def __init__(self, node1, node2):
+    def __init__(self, node1, node2, cost):
         self.node1=node1
         self.node2=node2
+        self.cost = cost
 
 nodes = {}
 
@@ -41,7 +42,6 @@ for i, l in enumerate(arr):
             if c == 'E':
                 end_node = node
 
-cheats = []
 
 for n in nodes.values():
     right = n.p +np.array([1,0])
@@ -60,37 +60,19 @@ for n in nodes.values():
     if tuple(down) in nodes:
         n.edges.append(Edge(n, nodes[tuple(down)]))
 
-    right2 = n.p + np.array([2, 0])
-    if tuple(right2) in nodes:
-        cheats.append(Cheat(n, nodes[tuple(right2)]))
-
-    left2 = n.p + np.array([-2, 0])
-    if tuple(left2) in nodes:
-        cheats.append(Cheat(n, nodes[tuple(left2)]))
-
-    up2 = n.p + np.array([0, 2])
-    if tuple(up2) in nodes:
-        cheats.append(Cheat(n, nodes[tuple(up2)]))
-
-    down2 = n.p + np.array([0, -2])
-    if tuple(down2) in nodes:
-        cheats.append(Cheat(n, nodes[tuple(down2)]))
 
 
 
-def solve(cheat = None):
+def solve(from_node):
     node_best_scores = dict((n,np.inf) for n in nodes.values())
-    node_best_scores[start_node]=0
-    nodes_unsolved = set([start_node])
+    node_best_scores[from_node]=0
+    nodes_unsolved = set([from_node])
     nodes_solved = set()
 
     while not len(nodes_unsolved) == 0:
 
         sorted_nodes = sorted(nodes_unsolved, key=lambda x: node_best_scores[x])
         best_node_unsolved = sorted_nodes[0]
-        if (best_node_unsolved== end_node):
-            best_score = node_best_scores[best_node_unsolved]
-            return best_score
 
         score = node_best_scores[best_node_unsolved]
         for edge in best_node_unsolved.edges:
@@ -99,38 +81,74 @@ def solve(cheat = None):
                 new_score = score + 1
                 if (new_score <= node_best_scores[edge.node2]):
                     node_best_scores[edge.node2] = new_score
-        if cheat and cheat.node1 == best_node_unsolved:
-            if (cheat.node2 not in nodes_solved):
-                nodes_unsolved.add(cheat.node2)
-                new_score = score + 2
-                if (new_score <= node_best_scores[cheat.node2]):
-                    node_best_scores[cheat.node2] = new_score
 
         nodes_unsolved.remove(best_node_unsolved)
         nodes_solved.add(best_node_unsolved)
-    return np.inf
+    return node_best_scores
 
-baseline = solve()
+node_best_scores_from_start = solve(start_node)
+node_best_scores_to_end = solve(end_node)
+
+baseline = node_best_scores_from_start[end_node]
 print(baseline)
 
+cheats = []
+
+for n in nodes.values():
+    for i in range(-2,3):
+        for j in range(-2,3):
+            cost = abs(i)+abs(j)
+            if cost <=2:
+                destination = n.p + np.array([i,j])
+                if tuple(destination) in nodes:
+                    m=nodes[tuple(destination)]
+                    cheats.append(Cheat(n, m, 2))
 
 
+print(len(cheats))
+
+cheating_scores = {}
+
+for i, c in enumerate(cheats):
+    #print(f" {i} of {len(cheats)}")
+    cheating_scores[c] = max(baseline-(node_best_scores_from_start[c.node1]+c.cost+ node_best_scores_to_end[c.node2]), 0)
 
 
-
-
-
-#cheating_scores = {}
-
-#for i, c in enumerate(cheats):
-#    print(f" {i} of {len(cheats)}")
-#    cheating_scores[c] = baseline-solve(c)
-
-
-#v = cheating_scores.values()
-#options= set(v)
-#counts = dict((o, sum(1 for x in v if x ==o)) for o in options)
-#print(counts)
-
-result = sum(counts[x] for x in counts if x>=100)
+v = cheating_scores.values()
+result = sum(1 for x in v if x>=100)
 print(result)
+
+
+
+options= set(v)
+counts = dict((o, sum(1 for x in v if x ==o)) for o in options)
+print(counts)
+
+
+# Part 2 add more cheats
+
+cheats = []
+
+for n in nodes.values():
+    for i in range(-20,21):
+        for j in range(-20,21):
+            cost =  abs(i)+abs(j)
+            if(cost<=20):
+                destination = n.p + np.array([i, j])
+                if tuple(destination) in nodes:
+                    cheats.append(Cheat(n, nodes[tuple(destination)], cost))
+
+
+cheating_scores = {}
+
+for i, c in enumerate(cheats):
+    #print(f" {i} of {len(cheats)}")
+    cheating_scores[c] = max(baseline-(node_best_scores_from_start[c.node1]+c.cost+ node_best_scores_to_end[c.node2]), 0)
+
+
+v = cheating_scores.values()
+result = sum(1 for x in v if x>=100)
+
+print(result)
+
+
